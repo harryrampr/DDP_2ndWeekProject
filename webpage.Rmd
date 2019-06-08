@@ -1,0 +1,30 @@
+---
+title: "Latest Earthquakes"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(leaflet)
+library(htmltools)
+library(googleVis)
+op <- options(gvis.plot.tag='chart')
+load(file = "repdates.rda")
+load(file = "map.rda")
+load(file = "table.rda")
+```
+<br style="margin-top: 20px">
+
+### Earthquakes Map (`r repStartingDate` - `r repEndingDate`)
+
+```{r out.width = '100%', echo=FALSE}
+quakesMap
+```
+<br style="margin-top: 20px">
+
+### Top Ranking Earthquakes (`r repStartingDate` - `r repEndingDate`)
+
+```{r results="asis", out.width = '100%', echo=FALSE}
+print(top20Table)
+```
+<br style="margin-top: 20px">

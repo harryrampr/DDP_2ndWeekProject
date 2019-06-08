@@ -1,0 +1,166 @@
+---
+title: "Developing Data Products - 2nd Week Project"
+author: "Harry Ramirez"
+date: "June 7, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Summary
+
+<font size="3">The objective of this project is to build a webpage that shows an interactive map developed using *R Markdown* and *leaflet*. We designed a webpage with an earthquakes map, showing details of epicenter, magnitude, date, time and location for each quake. We found current data at the [USGS](https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php) website. Using Markdown we rendered a webpage that was hosted at [github](https://harryrampr.github.io/DDP_2ndWeekProject/webpage.html). As an extra, we added to the webpage a table rendered with *googleVis* that shows the top ranking earthquakes for the report period.
+
+Here are the details of how the interactive map and table were created:
+</font>
+
+```{r message=FALSE}
+# Packages
+library(dplyr)
+library(lubridate)
+library(leaflet)
+library(htmltools)
+library(googleVis)
+op <- options(gvis.plot.tag='chart')
+
+# Report parameters
+dataUrl <- "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_month.csv"
+dataFileName <- "rawData.rda"
+repDays <- 15
+startingLng <- -95
+startingLat <- 38
+startingZoom <- 2
+legendLevels <- c("2.0", "3.0", "4.0", "5.0", "6.0", "7.0", "8.0+")
+mapColors <- list(lightgreen = "#BBF970",
+                  lightblue = "#88DAFF",
+                  lightgray = "#A3A3A3",
+                  pink = "#FF8EE9",
+                  orange = "#F2952F",
+                  red = "#D33D2A",
+                  darkred = "#A03336")
+
+# Download data if necessary
+if(!file.exists(dataFileName)) {
+    rawData <- read.csv(dataUrl, stringsAsFactors = F)
+    save(rawData, file = "rawData.rda")
+} else {
+    load(file = dataFileName)
+}
+
+# Color scale earthquake magnitude
+MagToCol <- function(magnitude) {
+    if(magnitude < 3) {
+        return(names(mapColors)[1])
+    } else if(magnitude < 4) {
+        return(names(mapColors)[2])
+    } else if(magnitude < 5) {
+        return(names(mapColors)[3])
+    } else if(magnitude < 6) {
+        return(names(mapColors)[4])
+    } else if(magnitude < 7) {
+        return(names(mapColors)[5])
+    } else if(magnitude < 8) {
+        return(names(mapColors)[6])
+    } else {
+        return(names(mapColors)[7])
+    }
+}
+
+# Create icons labels
+CustomLabels <- function(data) {
+    magHTML <- paste0("<p style = 'margin: 0'>",
+                      "<strong>Magnitude:</strong> ",
+                      data$mag, "</p>")
+    dateHTML <- paste0("<p style = 'margin: 0'>",
+                      "<strong>Date:</strong> ",
+                      data$date, "</p>")
+    timeHTML <- paste0("<p style = 'margin: 0'>",
+                       "<strong>Time:</strong> ",
+                       data$hour, "</p>")
+    locationHTML <- paste0("<p style = 'margin: 0'>",
+                       "<strong>Location:</strong> ",
+                       data$place, "</p>")
+    paste0(magHTML, dateHTML, timeHTML, locationHTML)
+}
+
+# Select data to plot in report
+quakesData <- rawData %>% 
+    filter(type == "earthquake") %>% 
+    filter(mag >= 2) %>%
+    mutate(time = ymd_hms(time)) %>% 
+    filter(time < date(max(.$time))) %>% 
+    filter(time >= date(max(.$time)) - days(repDays - 1)) %>% 
+    mutate(date = format(time, format = "%m/%d/%Y")) %>% 
+    mutate(hour = format(time, format = "%H:%M:%S %Z")) %>% 
+    mutate(label = CustomLabels(.)) %>% 
+    mutate(color = lapply(mag, MagToCol)) %>% 
+    select(longitude, latitude, time, date, hour, mag, place, label, color)
+
+# Calc report dates
+repStartingDate <- min(quakesData$time)
+repStartingDate <- format(repStartingDate, format = "%m/%d/%Y")
+repEndingDate <- max(quakesData$time)
+repEndingDate <- format(repEndingDate, format = "%m/%d/%Y")
+save(repStartingDate, repEndingDate, file = "repdates.rda")
+
+# Customize map icons
+mapIcons <- awesomeIcons(icon = "dot-circle-o",
+                      iconColor = "black",
+                      library = "fa",
+                      markerColor = quakesData$color)
+
+# Render interactive map
+quakesMap <- quakesData %>% 
+    leaflet() %>%
+    addProviderTiles("Esri.OceanBasemap") %>%
+    setView(lng = startingLng,
+            lat = startingLat,
+            zoom = startingZoom) %>% 
+    addAwesomeMarkers(lng = ~longitude,
+                      lat = ~latitude,
+                      icon = mapIcons,
+                      label = ~lapply(label, HTML)) %>% 
+    addLegend(labels = legendLevels,
+              colors = unname(unlist(mapColors)),
+              opacity = 0.95)
+
+save(quakesMap, file = "map.rda")
+
+# Calc top 20 earthquakes
+top20 <- quakesData %>% 
+    arrange(desc(mag), desc(time)) %>% 
+    rename(Magnitude=mag, Longitude=longitude, Latitude=latitude,
+           Date=date, Time=hour, Location=place) %>% 
+    mutate(Ranking=1:nrow(.)) %>% 
+    select(Ranking, Magnitude, Longitude, Latitude, Date, Time, Location) %>% 
+    head(20)
+
+# Render top 20 table
+top20Table <- gvisTable(top20,
+                        formats=list(Magnitude="#,###.#",
+                                     Longitude="#,###.##",
+                                     Latitude="#,###.##"),
+                        options=list(page='enable',
+                                     height='automatic',
+                                     width='910'))
+
+save(top20Table, file = "table.rda")
+
+```
+<br style="margin-top: 20px">
+
+### Earthquakes Map (`r repStartingDate` - `r repEndingDate`)
+
+```{r out.width = '100%', echo=FALSE}
+quakesMap
+```
+<br style="margin-top: 20px">
+
+### Top Ranking Earthquakes (`r repStartingDate` - `r repEndingDate`)
+
+```{r results="asis", out.width = '100%', echo=FALSE}
+print(top20Table)
+```
+<br style="margin-top: 20px">
