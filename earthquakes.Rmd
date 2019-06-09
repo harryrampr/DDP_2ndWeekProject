@@ -29,8 +29,8 @@ op <- options(gvis.plot.tag='chart')
 dataUrl <- "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_month.csv"
 dataFileName <- "rawData.rda"
 repDays <- 15
-startingLng <- -95
-startingLat <- 38
+startingLng <- -20
+startingLat <- 10
 startingZoom <- 2
 legendLevels <- c("2.0 - 2.9", "3.0 - 3.9",
                   "4.0 - 4.9", "5.0 - 5.9",
@@ -115,7 +115,7 @@ mapIcons <- awesomeIcons(icon = "dot-circle-o",
                       markerColor = quakesData$color)
 
 # Set map Options
-mapOptions <- leafletOptions(minZoom = 1,
+mapOptions <- leafletOptions(minZoom = 2,
                              maxZoom = 10)
 
 markerLabelOpts <-labelOptions(style = list("box-shadow" = "2px 2px rgba(0,0,0,0.25)",
@@ -123,10 +123,13 @@ markerLabelOpts <-labelOptions(style = list("box-shadow" = "2px 2px rgba(0,0,0,0
 
 # Render interactive map
 quakesMap <- quakesData %>% 
-    leaflet(options = mapOptions) %>%
+    leaflet(options = mapOptions,
+            width = 910,
+            height = 600) %>%
     addProviderTiles(providers$Esri.OceanBasemap) %>%
     addProviderTiles(providers$Stamen.TonerLines,
                      options = providerTileOptions(opacity = 0.35)) %>%
+    setMaxBounds(-185, 90, 185, -90) %>% 
     setView(lng = startingLng,
             lat = startingLat,
             zoom = startingZoom) %>% 
