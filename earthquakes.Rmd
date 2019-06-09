@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Summary
 
-<font size="3">The objective of this project is to build a webpage that shows an interactive map developed using *R Markdown* and *leaflet*. We designed a webpage with an earthquakes map, showing details of epicenter, magnitude, date, time and location for each quake. We found current data at the [USGS](https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php) website. Using Markdown we rendered a webpage that was hosted at [github](https://harryrampr.github.io/DDP_2ndWeekProject/webpage.html). As an extra, we added to the webpage a table rendered with *googleVis* that shows the top ranking earthquakes for the report period.
+<font size="3">The objective of the assingment is to build a webpage that shows an interactive map developed using *R Markdown* and *leaflet*. We designed a webpage with an earthquakes map, showing details of epicenter, magnitude, date, time and location for each quake. We found current data at the [USGS](https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php) website. Using Markdown we rendered a webpage that was hosted at [github](https://harryrampr.github.io/DDP_2ndWeekProject/webpage.html). As an extra, we added to the webpage a table rendered with *googleVis* that shows the top ranking earthquakes for the report period.
 
 Here are the details of how the interactive map and table were created:
 </font>
@@ -32,7 +32,10 @@ repDays <- 15
 startingLng <- -95
 startingLat <- 38
 startingZoom <- 2
-legendLevels <- c("2.0", "3.0", "4.0", "5.0", "6.0", "7.0", "8.0+")
+legendLevels <- c("2.0 - 2.9", "3.0 - 3.9",
+                  "4.0 - 4.9", "5.0 - 5.9",
+                  "6.0 - 6.9", "7.0 - 7.9",
+                  "8.0+")
 mapColors <- list(lightgreen = "#BBF970",
                   lightblue = "#88DAFF",
                   lightgray = "#A3A3A3",
@@ -111,19 +114,31 @@ mapIcons <- awesomeIcons(icon = "dot-circle-o",
                       library = "fa",
                       markerColor = quakesData$color)
 
+# Set map Options
+mapOptions <- leafletOptions(minZoom = 1,
+                             maxZoom = 10)
+
+markerLabelOpts <-labelOptions(style = list("box-shadow" = "2px 2px rgba(0,0,0,0.25)",
+                                            "border-color" = "rgba(0,0,0,0.4)"))
+
 # Render interactive map
 quakesMap <- quakesData %>% 
-    leaflet() %>%
-    addProviderTiles("Esri.OceanBasemap") %>%
+    leaflet(options = mapOptions) %>%
+    addProviderTiles(providers$Esri.OceanBasemap) %>%
+    addProviderTiles(providers$Stamen.TonerLines,
+                     options = providerTileOptions(opacity = 0.35)) %>%
     setView(lng = startingLng,
             lat = startingLat,
             zoom = startingZoom) %>% 
     addAwesomeMarkers(lng = ~longitude,
                       lat = ~latitude,
                       icon = mapIcons,
-                      label = ~lapply(label, HTML)) %>% 
-    addLegend(labels = legendLevels,
+                      label = ~lapply(label, HTML),
+                      labelOptions = markerLabelOpts) %>% 
+    addLegend(position = "topright",
+              labels = legendLevels,
               colors = unname(unlist(mapColors)),
+              title = "Magnitude",
               opacity = 0.95)
 
 save(quakesMap, file = "map.rda")
@@ -134,14 +149,18 @@ top20 <- quakesData %>%
     rename(Magnitude=mag, Longitude=longitude, Latitude=latitude,
            Date=date, Time=hour, Location=place) %>% 
     mutate(Ranking=1:nrow(.)) %>% 
+    mutate(Longitude = paste0(format(Longitude * ifelse(Longitude<0,-1,1),
+                                     digits=2, nsmall=2),
+                              ifelse(Longitude<0,"° W","° E"))) %>% 
+    mutate(Latitude = paste0(format(Latitude * ifelse(Latitude<0,-1,1),
+                                    digits=2, nsmall=2),
+                              ifelse(Latitude<0,"° S","° N"))) %>% 
     select(Ranking, Magnitude, Longitude, Latitude, Date, Time, Location) %>% 
     head(20)
 
 # Render top 20 table
 top20Table <- gvisTable(top20,
-                        formats=list(Magnitude="#,###.#",
-                                     Longitude="#,###.##",
-                                     Latitude="#,###.##"),
+                        formats=list(Magnitude="##.#"),
                         options=list(page='enable',
                                      height='automatic',
                                      width='910'))
@@ -153,14 +172,14 @@ save(top20Table, file = "table.rda")
 
 ### Earthquakes Map (`r repStartingDate` - `r repEndingDate`)
 
-```{r out.width = '100%', echo=FALSE}
+```{r out.width='100%', echo=FALSE}
 quakesMap
 ```
 <br style="margin-top: 20px">
 
 ### Top Ranking Earthquakes (`r repStartingDate` - `r repEndingDate`)
 
-```{r results="asis", out.width = '100%', echo=FALSE}
+```{r results="asis", out.width='100%', echo=FALSE}
 print(top20Table)
 ```
 <br style="margin-top: 20px">

@@ -15,16 +15,16 @@ load(file = "table.rda")
 ```
 <br style="margin-top: 20px">
 
-### Earthquakes Map (`r repStartingDate` - `r repEndingDate`)
+### Earthquakes Map <font color="#3465A4">(`r repStartingDate` - `r repEndingDate`)</font>
 
-```{r out.width = '100%', echo=FALSE}
+```{r out.width='100%', echo=FALSE}
 quakesMap
 ```
 <br style="margin-top: 20px">
 
-### Top Ranking Earthquakes (`r repStartingDate` - `r repEndingDate`)
+### Top Ranking Earthquakes <font color="#3465A4">(`r repStartingDate` - `r repEndingDate`)</font>
 
-```{r results="asis", out.width = '100%', echo=FALSE}
+```{r results="asis", out.width='100%', echo=FALSE}
 print(top20Table)
 ```
 <br style="margin-top: 20px">
