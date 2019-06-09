@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Summary
 
-<font size="3">The objective of the assingment is to build a webpage that shows an interactive map developed using *R Markdown* and *leaflet*. We designed an earthquakes map webpage, showing details of epicenter, magnitude, date, time and location for each quake. We found current data at the [USGS](https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php) website. Using Markdown we rendered a webpage that was hosted at [github](https://harryrampr.github.io/DDP_2ndWeekProject/webpage.html). As an extra, we added to the webpage a table rendered with *googleVis* that shows the top ranking earthquakes for the report period.
+<font size="3">The objective of the assingment is to build a webpage that shows an interactive map developed using *R Markdown* and *leaflet*. We designed an earthquakes map webpage, showing details of epicenter, magnitude, date, time and location for each quake. Current data was available for downloading as CSV at the [USGS](https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php) website. Using Markdown we rendered a webpage that was hosted at [github](https://harryrampr.github.io/DDP_2ndWeekProject/webpage.html). As an extra, we added to the webpage a table rendered with *googleVis* that shows the top ranking earthquakes for the report period.
 
 Here are the details of how the interactive map and table were created:
 </font>
@@ -129,10 +129,10 @@ quakesMap <- quakesData %>%
     addProviderTiles(providers$Esri.OceanBasemap) %>%
     addProviderTiles(providers$Stamen.TonerLines,
                      options = providerTileOptions(opacity = 0.35)) %>%
-    setMaxBounds(-185, 90, 185, -90) %>% 
+    setMaxBounds(-185, 90, 185, -90) %>%
     setView(lng = startingLng,
             lat = startingLat,
-            zoom = startingZoom) %>% 
+            zoom = startingZoom) %>%
     addAwesomeMarkers(lng = ~longitude,
                       lat = ~latitude,
                       icon = mapIcons,
@@ -145,6 +145,8 @@ quakesMap <- quakesData %>%
               opacity = 0.95)
 
 save(quakesMap, file = "map.rda")
+library(htmlwidgets)
+saveWidget(quakesMap, file="quakesMap.html")
 
 # Calc top 20 earthquakes
 top20 <- quakesData %>% 
@@ -175,7 +177,7 @@ save(top20Table, file = "table.rda")
 
 ### Earthquakes Map (`r repStartingDate` - `r repEndingDate`)
 
-```{r out.width='100%', echo=FALSE}
+```{r results="asis", echo=FALSE}
 quakesMap
 ```
 <br style="margin-top: 20px">

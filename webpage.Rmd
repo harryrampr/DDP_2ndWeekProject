@@ -17,7 +17,7 @@ load(file = "table.rda")
 
 ### Earthquakes Map <font color="#3465A4">(`r repStartingDate` - `r repEndingDate`)</font>
 
-```{r out.width='100%', echo=FALSE}
+```{r results="asis", echo=FALSE}
 quakesMap
 ```
 <br style="margin-top: 20px">
